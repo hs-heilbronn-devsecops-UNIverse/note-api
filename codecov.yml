@@ -1,0 +1,9 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 75%             # Minimum target coverage the project
+        threshold: 1%           # Allowable decrease before alerts
+    patch:
+      default:
+        target: 85%             # Higher standard for new code

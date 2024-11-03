@@ -1,20 +1,22 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# This workflow will install Python dependencies, run tests, and lint with a single version of Python.
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
 name: Python application
 
 on:
-  # push:
-    # branches: [ "main", "develop" ]
+  push:
+    branches: [ "main", "develop" ]
   pull_request:
     branches: [ "main", "develop" ]
 
 permissions:
   contents: read
+  actions: read                 # Allows reading actions and workflows
+  security-events: write        # Allows uploading SARIF files
+
 
 jobs:
   lint-test:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -29,13 +31,11 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
-    # Linting if Needed (not required for exercise 1)
+    # Uncomment the following lines to enable linting
     # - name: Lint with flake8
-      # run: |
-        # stop the build if there are Python syntax errors or undefined names
-        # flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    #   run: |
+    #     flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Test with coverage (optional)
       run: |
@@ -45,12 +45,23 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
-        directory: ./coverage/reports/
-        env_vars: OS,PYTHON
-        files: ./coverage.xml
         fail_ci_if_error: true
-        flags: unittests
-        name: codecov-umbrella
         token: ${{ secrets.CODECOV_TOKEN }}
-        verbose: true
-    
+        verbose: false
+
+  snyk-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4  # Updated to use the same branch checkout as the lint-test job
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/python-3.10@master  # Ensure this action is correctly specified
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --sarif-file-output=snyk.sarif
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
+          
+        
