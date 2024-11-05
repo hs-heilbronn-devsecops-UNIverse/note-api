@@ -72,6 +72,7 @@ jobs:
         integrate_with_snyk_platform: true
         snyk_org_id: ${{ secrets.SNYK_ORGANISATION_ID }}
         snyk_integration_id: ${{ secrets.SNYK_INTEGRATION_ID }}
+        branch_name: 'main'
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@v3
       with:
