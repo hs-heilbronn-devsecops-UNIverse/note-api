@@ -52,7 +52,7 @@ jobs:
 
 
   snyk-test:
-    if: github.event.pull_request.merged == true || github.event_name == 'push' && github.ref == 'refs/heads/main'      #if merge request
+    if: github.event.pull_request.merged == true && github.ref == 'refs/heads/main' || github.event_name == 'push' && github.ref == 'refs/heads/main'      #if merge request to main
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4  
@@ -66,7 +66,23 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk.sarif
-    
   
-          
-        
+  # dependent on snyk-test
+  build-and-push-image:
+    if: github.event.pull_request.merged == true && github.ref == 'refs/heads/main' || github.event_name == 'push' && github.ref == 'refs/heads/main'      #if merge request to main
+    needs: [snyk-test, lint-test] # if both successfuol, then run psuh new container image
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build and push Docker image
+      env:
+        CONTAINER_TOKEN: ${{ secrets.CONTAINER_TOKEN }}
+      run: |
+        # Step 1: Build the Docker image and tag it
+        docker build -t ghcr.io/hs-heilbronn-devsecops-universe/note-api:latest .
+
+        # Step 2: Log in to the GitHub Container Registry
+        echo $CONTAINER_TOKEN | docker login ghcr.io -u hs-heilbronn-devsecops-universe --password-stdin
+
+        # Step 3: Push the Docker image to the registry
+        docker push ghcr.io/hs-heilbronn-devsecops-universe/note-api:latest
