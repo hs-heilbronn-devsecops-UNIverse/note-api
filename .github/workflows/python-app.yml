@@ -99,26 +99,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Authenticate with Google Cloud
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: 'projects/70756149774/locations/global/workloadIdentityPools/github-actions/providers/github-repos'
           service_account: 'hshn-devsecops-service-account@hs-heilbronn-devsecops.iam.gserviceaccount.com'
 
-      # Configure Docker for Google Artifact Registry
       - name: Configure Docker for Google Artifact Registry
         run: gcloud auth configure-docker europe-west3-docker.pkg.dev
 
-      # Build and push Docker image to Google Artifact Registry
-      - name: Build and push Docker image
+      - name: Pull image from GHCR and push to GCR
+        env:
+          CONTAINER_TOKEN: ${{ secrets.CONTAINER_TOKEN }}
         run: |
-          # Define the Artifact Registry image path
-          IMAGE_TAG=europe-west3-docker.pkg.dev/hs-heilbronn-devsecops/note-api-repo/note-api:latest
-          docker build -t $IMAGE_TAG .
-          docker push $IMAGE_TAG
+          # Log in to GHCR
+          echo $CONTAINER_TOKEN | docker login ghcr.io -u hs-heilbronn-devsecops-universe --password-stdin
 
-      # Deploy to Google Cloud Run
+          # Pull the latest image from GHCR
+          GHCR_IMAGE=ghcr.io/hs-heilbronn-devsecops-universe/note-api:latest
+          docker pull $GHCR_IMAGE
+
+          # Tag the image for GCR
+          GCR_IMAGE=europe-west3-docker.pkg.dev/hs-heilbronn-devsecops/note-api-repo/note-api:latest
+          docker tag $GHCR_IMAGE $GCR_IMAGE
+
+          # Push the image to GCR
+          docker push $GCR_IMAGE
+
       - name: Deploy to Google Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
