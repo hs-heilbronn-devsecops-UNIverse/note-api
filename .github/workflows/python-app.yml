@@ -14,6 +14,7 @@ permissions:
   contents: read
   actions: read                 # Allows reading actions and workflows
   security-events: write        # Allows uploading SARIF files
+  id-token: write  # Allow id toke write
 
 
 jobs:
