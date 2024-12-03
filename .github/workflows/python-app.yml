@@ -91,3 +91,19 @@ jobs:
         # Push both tags to the registry
         docker push $IMAGE_TAG
         docker push ghcr.io/hs-heilbronn-devsecops-universe/note-api:latest
+
+  deploy-to-cloudrun:
+    needs: [build-and-push-image]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: google-github-actions/auth@v1
+      with:
+        workload_identity_provider: 'projects/70756149774/locations/global/workloadIdentityPools/github-actions/providers/github-repos'
+        service_account: 'hshn-devsecops-service-account@hs-heilbronn-devsecops.iam.gserviceaccount.com'
+    - name: Deploy to Google Cloud Run
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: note-api-hshn-devsecops
+        image: ghcr.io/hs-heilbronn-devsecops-universe/note-api:latest
+        region: europe-west1
+        env_vars: BACKEND=memory
