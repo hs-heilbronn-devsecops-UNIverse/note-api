@@ -106,25 +106,23 @@ jobs:
           workload_identity_provider: 'projects/70756149774/locations/global/workloadIdentityPools/github-actions/providers/github-repos'
           service_account: 'hshn-devsecops-service-account@hs-heilbronn-devsecops.iam.gserviceaccount.com'
 
-      # Log in to GitHub Container Registry (GHCR)
-      - name: Authenticate GHCR
-        run: |
-          echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u USERNAME --password-stdin
+      # Configure Docker for Google Artifact Registry
+      - name: Configure Docker for Google Artifact Registry
+        run: gcloud auth configure-docker europe-west3-docker.pkg.dev
 
-      # Deploy to Cloud Run using GHCR
+      # Build and push Docker image to Google Artifact Registry
+      - name: Build and push Docker image
+        run: |
+          # Define the Artifact Registry image path
+          IMAGE_TAG=europe-west3-docker.pkg.dev/hs-heilbronn-devsecops/note-api-repo/note-api:latest
+          docker build -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+
+      # Deploy to Google Cloud Run
       - name: Deploy to Google Cloud Run
-        run: |
-          # Create Docker credentials secret for GHCR
-          echo '{"auths":{"ghcr.io":{"auth":"'$(echo -n "USERNAME:${{ secrets.GHCR_PAT }}" | base64 -w0)'"}}}' > /tmp/config.json
-          gcloud secrets create ghcr-pull-secret \
-            --data-file=/tmp/config.json || gcloud secrets update ghcr-pull-secret \
-            --data-file=/tmp/config.json
-
-          # Grant Cloud Run access to the GHCR secret
-          gcloud run deploy note-api-universe \
-            --image ghcr.io/hs-heilbronn-devsecops-universe/note-api:latest \
-            --region europe-west3 \
-            --platform managed \
-            --update-env-vars BACKEND=memory \
-            --set-secrets=/etc/docker/config.json=ghcr-pull-secret:latest \
-            --allow-unauthenticated
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: note-api-universe
+          image: europe-west3-docker.pkg.dev/hs-heilbronn-devsecops/note-api-repo/note-api:latest
+          region: europe-west3
+          env_vars: BACKEND=memory
