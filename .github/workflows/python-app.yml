@@ -130,6 +130,11 @@ jobs:
       - name: Configure Docker for Google Artifact Registry
         run: gcloud auth configure-docker europe-west3-docker.pkg.dev
 
+      - name: Configure Docker Credential Helper
+        run: |
+          mkdir -p ~/.docker
+          echo '{"credsStore": "secretservice"}' > ~/.docker/config.json
+
       - name: Pull image from GHCR and push to GCR
         env:
           CONTAINER_TOKEN: ${{ secrets.CONTAINER_TOKEN }}
