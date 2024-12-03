@@ -88,6 +88,6 @@ jobs:
         # Log in to the GitHub Container Registry
         echo $CONTAINER_TOKEN | docker login ghcr.io -u hs-heilbronn-devsecops-universe --password-stdin
 
-        # Push both tags to the registry
+        # Push both tags to the registr
         docker push $IMAGE_TAG
         docker push ghcr.io/hs-heilbronn-devsecops-universe/note-api:latest
