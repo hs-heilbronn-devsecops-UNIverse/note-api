@@ -103,7 +103,7 @@ jobs:
     - name: Deploy to Google Cloud Run
       uses: google-github-actions/deploy-cloudrun@v2
       with:
-        service: note-api-hshn-devsecops
+        service: note-api-UNIverse
         image: ghcr.io/hs-heilbronn-devsecops-universe/note-api:latest
-        region: europe-west1
+        region: europe-west3
         env_vars: BACKEND=memory
