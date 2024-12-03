@@ -94,64 +94,64 @@ jobs:
         docker push ghcr.io/hs-heilbronn-devsecops-universe/note-api:latest
 
   deploy-to-cloudrun:
-  needs: [build-and-push-image]
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v4
+    needs: [build-and-push-image]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v1
-      with:
-        workload_identity_provider: 'projects/70756149774/locations/global/workloadIdentityPools/github-actions/providers/github-repos'
-        service_account: 'hshn-devsecops-service-account@hs-heilbronn-devsecops.iam.gserviceaccount.com'
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: 'projects/70756149774/locations/global/workloadIdentityPools/github-actions/providers/github-repos'
+          service_account: 'hshn-devsecops-service-account@hs-heilbronn-devsecops.iam.gserviceaccount.com'
 
-    - name: Check and Create Artifact Registry Repository
-      run: |
-        REPO_NAME=note-api-repo
-        REGION=europe-west3
+      - name: Check and Create Artifact Registry Repository
+        run: |
+          REPO_NAME=note-api-repo
+          REGION=europe-west3
 
-        # Check if the repository exists
-        REPO_EXISTS=$(gcloud artifacts repositories list \
-          --filter="name~$REPO_NAME" \
-          --location=$REGION \
-          --format="value(name)")
-
-        # Create the repository if it does not exist
-        if [ -z "$REPO_EXISTS" ]; then
-          echo "Repository $REPO_NAME does not exist. Creating it..."
-          gcloud artifacts repositories create $REPO_NAME \
-            --repository-format=docker \
+          # Check if the repository exists
+          REPO_EXISTS=$(gcloud artifacts repositories list \
+            --filter="name~$REPO_NAME" \
             --location=$REGION \
-            --description="Repository for note-api images"
-        else
-          echo "Repository $REPO_NAME already exists."
-        fi
+            --format="value(name)")
 
-    - name: Configure Docker for Google Artifact Registry
-      run: gcloud auth configure-docker europe-west3-docker.pkg.dev
+          # Create the repository if it does not exist
+          if [ -z "$REPO_EXISTS" ]; then
+            echo "Repository $REPO_NAME does not exist. Creating it..."
+            gcloud artifacts repositories create $REPO_NAME \
+              --repository-format=docker \
+              --location=$REGION \
+              --description="Repository for note-api images"
+          else
+            echo "Repository $REPO_NAME already exists."
+          fi
 
-    - name: Pull image from GHCR and push to GCR
-      env:
-        CONTAINER_TOKEN: ${{ secrets.CONTAINER_TOKEN }}
-      run: |
-        # Log in to GHCR
-        echo $CONTAINER_TOKEN | docker login ghcr.io -u hs-heilbronn-devsecops-universe --password-stdin
+      - name: Configure Docker for Google Artifact Registry
+        run: gcloud auth configure-docker europe-west3-docker.pkg.dev
 
-        # Pull the latest image from GHCR
-        GHCR_IMAGE=ghcr.io/hs-heilbronn-devsecops-universe/note-api:latest
-        docker pull $GHCR_IMAGE
+      - name: Pull image from GHCR and push to GCR
+        env:
+          CONTAINER_TOKEN: ${{ secrets.CONTAINER_TOKEN }}
+        run: |
+          # Log in to GHCR
+          echo $CONTAINER_TOKEN | docker login ghcr.io -u hs-heilbronn-devsecops-universe --password-stdin
 
-        # Tag the image for GCR
-        GCR_IMAGE=europe-west3-docker.pkg.dev/hs-heilbronn-devsecops/note-api-repo/note-api:latest
-        docker tag $GHCR_IMAGE $GCR_IMAGE
+          # Pull the latest image from GHCR
+          GHCR_IMAGE=ghcr.io/hs-heilbronn-devsecops-universe/note-api:latest
+          docker pull $GHCR_IMAGE
 
-        # Push the image to GCR
-        docker push $GCR_IMAGE
+          # Tag the image for GCR
+          GCR_IMAGE=europe-west3-docker.pkg.dev/hs-heilbronn-devsecops/note-api-repo/note-api:latest
+          docker tag $GHCR_IMAGE $GCR_IMAGE
 
-    - name: Deploy to Google Cloud Run
-      uses: google-github-actions/deploy-cloudrun@v2
-      with:
-        service: note-api-<your-organisation>
-        image: europe-west3-docker.pkg.dev/hs-heilbronn-devsecops/note-api-repo/note-api:latest
-        region: europe-west3
-        env_vars: BACKEND=memory
+          # Push the image to GCR
+          docker push $GCR_IMAGE
+
+      - name: Deploy to Google Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: note-api-<your-organisation>
+          image: europe-west3-docker.pkg.dev/hs-heilbronn-devsecops/note-api-repo/note-api:latest
+          region: europe-west3
+          env_vars: BACKEND=memory
