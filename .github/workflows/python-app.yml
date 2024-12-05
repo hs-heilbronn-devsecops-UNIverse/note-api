@@ -134,10 +134,6 @@ jobs:
         env:
           CONTAINER_TOKEN: ${{ secrets.CONTAINER_TOKEN }}
         run: |
-          # Remove Credential Storage for Docker
-          mkdir -p ~/.docker
-          echo '{}' > ~/.docker/config.json
-
           # Log in to GHCR
           echo $CONTAINER_TOKEN | docker login ghcr.io -u hs-heilbronn-devsecops-universe --password-stdin
 
