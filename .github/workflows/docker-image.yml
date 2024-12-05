@@ -22,4 +22,4 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: ghcr.io/${{ github.repository }}/app:${{ github.sha }}
+          tags: ghcr.io/hs-heilbronn-devsecops-universe/app:${{ github.sha }}

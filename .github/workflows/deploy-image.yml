@@ -37,7 +37,7 @@ jobs:
 
       - name: Fetch tag push
         run: |
-          MY_IMAGE=ghcr.io/${{ github.repository }}/app:${{ github.sha }}
+          MY_IMAGE=ghcr.io/hs-heilbronn-devsecops-universe/app:${{ github.sha }}
           docker pull $MY_IMAGE
           NEW_IMAGE=europe-west3-docker.pkg.dev/hs-heilbronn-devsecops/note-api/note-api:${{ github.sha }}
           docker tag $MY_IMAGE $NEW_IMAGE
