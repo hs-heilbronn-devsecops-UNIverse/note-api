@@ -1,0 +1,65 @@
+name: Deploy to Google Cloud Run
+
+on:
+    workflow_run:
+      workflows: ["Build and Push Docker Image"]  # Trigger this workflow after successful completion of the others
+      types:
+        - completed
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+jobs:
+  deploy-to-cloudrun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/70756149774/locations/global/workloadIdentityPools/github-actions/providers/github-repos'
+          service_account: 'hshn-devsecops-service-account@hs-heilbronn-devsecops.iam.gserviceaccount.com'
+
+      - name: Check and Create Artifact Registry Repository
+        run: |
+          REPO_NAME=note-api-repo-universe
+          REGION=europe-west3
+
+          REPO_EXISTS=$(gcloud artifacts repositories list \
+            --filter="name~$REPO_NAME" \
+            --location=$REGION \
+            --format="value(name)")
+
+          if [ -z "$REPO_EXISTS" ]; then
+            echo "Repository $REPO_NAME does not exist. Creating it..."
+            gcloud artifacts repositories create $REPO_NAME \
+              --repository-format=docker \
+              --location=$REGION \
+              --description="Repository for note-api images"
+          else
+            echo "Repository $REPO_NAME already exists."
+          fi
+
+      - name: Configure Docker for Google Artifact Registry
+        run: gcloud auth configure-docker europe-west3-docker.pkg.dev
+
+      - name: Pull image from GHCR and push to GCR
+        env:
+          CONTAINER_TOKEN: ${{ secrets.CONTAINER_TOKEN }}
+        run: |
+          echo $CONTAINER_TOKEN | docker login ghcr.io -u hs-heilbronn-devsecops-universe --password-stdin
+          GHCR_IMAGE=ghcr.io/hs-heilbronn-devsecops-universe/note-api:latest
+          docker pull $GHCR_IMAGE
+          GCR_IMAGE=europe-west3-docker.pkg.dev/hs-heilbronn-devsecops/note-api-repo-universe/note-api:latest
+          docker tag $GHCR_IMAGE $GCR_IMAGE
+          docker push $GCR_IMAGE
+
+      - name: Deploy to Google Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: note-api-universe
+          image: europe-west3-docker.pkg.dev/hs-heilbronn-devsecops/note-api-repo-universe/note-api:latest
+          region: europe-west3
+          env_vars: BACKEND=memory
