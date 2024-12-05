@@ -1,0 +1,28 @@
+name: Pipeline for Python application
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+permissions:
+  contents: read
+  actions: read                 # Allows reading actions and workflows
+  security-events: write        # Allows uploading SARIF files
+  id-token: write  # Allow id toke write
+
+jobs:
+  lint-test:
+    uses: ./.github/workflows/lint-test.yml
+
+  snyk-test:
+    uses: ./.github/workflows/snyk-test.yml
+
+  build-and-push-image:
+    needs: [snyk-test, lint-test]
+    uses: ./.github/workflows/build-and-push-image.yml
+
+  deploy-to-cloudrun:
+    needs: [build-and-push-image]
+    uses: ./.github/workflows/deploy-to-cloudrun.yml
