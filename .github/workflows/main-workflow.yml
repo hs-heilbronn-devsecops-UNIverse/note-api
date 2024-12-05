@@ -15,14 +15,18 @@ permissions:
 jobs:
   lint-test:
     uses: ./.github/workflows/lint-test.yml
+    secrets: inherit
 
   snyk-test:
     uses: ./.github/workflows/snyk-test.yml
+    secrets: inherit
 
   build-and-push-image:
     needs: [snyk-test, lint-test]
     uses: ./.github/workflows/build-and-push-image.yml
+    secrets: inherit
 
   deploy-to-cloudrun:
     needs: [build-and-push-image]
     uses: ./.github/workflows/deploy-to-cloudrun.yml
+    secrets: inherit
