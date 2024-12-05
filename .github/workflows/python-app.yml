@@ -134,6 +134,10 @@ jobs:
         env:
           CONTAINER_TOKEN: ${{ secrets.CONTAINER_TOKEN }}
         run: |
+          # Credential Helper for Docker
+          mkdir -p ~/.docker
+          echo '{"credsStore": "pass"}' > ~/.docker/config.json
+
           # Log in to GHCR
           echo $CONTAINER_TOKEN | docker login ghcr.io -u hs-heilbronn-devsecops-universe --password-stdin
 
