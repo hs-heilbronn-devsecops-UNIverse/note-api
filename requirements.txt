@@ -3,3 +3,4 @@ fastapi
 google-cloud-storage
 redis
 uvicorn[standard]
+opentelemetry-instrumentation-fastapi
