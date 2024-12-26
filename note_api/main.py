@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import sys
+import os
 
 from uuid import uuid4
 from typing import List, Optional
@@ -20,7 +20,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 app = FastAPI()
 
-if "pytest" not in sys.modules:
+if os.getenv("ENV") != "test":
     # Set up OpenTelemetry tracer
     tracer_provider = TracerProvider()
     trace.set_tracer_provider(tracer_provider)
