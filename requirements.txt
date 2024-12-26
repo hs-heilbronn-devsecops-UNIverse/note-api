@@ -8,4 +8,3 @@ opentelemetry-sdk
 opentelemetry-exporter-gcp-monitoring
 opentelemetry-exporter-gcp-trace
 opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-asgi
