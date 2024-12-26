@@ -7,4 +7,3 @@ opentelemetry-api
 opentelemetry-sdk
 opentelemetry-exporter-gcp-trace
 opentelemetry-instrumentation-fastapi
-opentelemetry-exporter-google-cloud-trace
