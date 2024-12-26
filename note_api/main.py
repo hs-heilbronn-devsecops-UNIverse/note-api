@@ -9,12 +9,25 @@ from starlette.responses import RedirectResponse
 from .backends import Backend, RedisBackend, MemoryBackend, GCSBackend
 from .model import Note, CreateNoteRequest
 
+from opentelemetry import trace
+from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.asgi import OpenTelemetryMiddlewar
 
 app = FastAPI()
 
 # OpenTelemetry setup
+tracer_provider = TracerProvider()
+trace.set_tracer_provider(tracer_provider)
+
+cloud_trace_exporter = CloudTraceSpanExporter()
+span_processor = BatchSpanProcessor(cloud_trace_exporter)
+tracer_provider.add_span_processor(span_processor)
+
 FastAPIInstrumentor.instrument_app(app)
+app.add_middleware(OpenTelemetryMiddleware)
 
 my_backend: Optional[Backend] = None
 
@@ -40,12 +53,17 @@ def redirect_to_notes() -> None:
 
 @app.get('/notes')
 def get_notes(backend: Annotated[Backend, Depends(get_backend)]) -> List[Note]:
-    keys = backend.keys()
 
-    Notes = []
-    for key in keys:
-        Notes.append(backend.get(key))
-    return Notes
+    # Add custom span
+    tracer = get_tracer(__name__)
+    with tracer.start_as_current_span("get_notes_operation"):
+
+        keys = backend.keys()
+
+        Notes = []
+        for key in keys:
+            Notes.append(backend.get(key))
+        return Notes
 
 
 @app.get('/notes/{note_id}')
