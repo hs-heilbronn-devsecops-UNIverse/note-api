@@ -15,7 +15,7 @@ from .model import Note, CreateNoteRequest
 from opentelemetry import trace
 from opentelemetry.trace import get_tracer
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
@@ -28,7 +28,7 @@ if "pytest" not in sys.modules and os.getenv("ENV") != "test":
 
     # Configure GCP Trace exporter
     cloud_trace_exporter = CloudTraceSpanExporter()
-    span_processor = BatchSpanProcessor(cloud_trace_exporter)
+    span_processor = SimpleSpanProcessor(cloud_trace_exporter)
     tracer_provider.add_span_processor(span_processor)
 
 # Verify the FastAPI app is instrumented to automatically trace all requests
