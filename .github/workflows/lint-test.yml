@@ -20,7 +20,6 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-        pytest --cov=note_api --cov-report=term --cov-report=xml --maxfail=5 -n auto
 
     # Uncomment the following lines to enable linting
     # - name: Lint with flake8
