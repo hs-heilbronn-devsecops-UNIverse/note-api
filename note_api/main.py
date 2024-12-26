@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
+
 from uuid import uuid4
 from typing import List, Optional
 from os import getenv
@@ -9,11 +12,26 @@ from starlette.responses import RedirectResponse
 from .backends import Backend, RedisBackend, MemoryBackend, GCSBackend
 from .model import Note, CreateNoteRequest
 
+from opentelemetry import trace
+from opentelemetry.trace import get_tracer
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 app = FastAPI()
 
-# OpenTelemetry setup
+if "pytest" not in sys.modules and os.getenv("ENV") != "test":
+    # Set up OpenTelemetry tracer
+    tracer_provider = TracerProvider()
+    trace.set_tracer_provider(tracer_provider)
+
+    # Configure GCP Trace exporter
+    cloud_trace_exporter = CloudTraceSpanExporter()
+    span_processor = SimpleSpanProcessor(cloud_trace_exporter)
+    tracer_provider.add_span_processor(span_processor)
+
+# Verify the FastAPI app is instrumented to automatically trace all requests
 FastAPIInstrumentor.instrument_app(app)
 
 my_backend: Optional[Backend] = None
@@ -40,12 +58,17 @@ def redirect_to_notes() -> None:
 
 @app.get('/notes')
 def get_notes(backend: Annotated[Backend, Depends(get_backend)]) -> List[Note]:
-    keys = backend.keys()
 
-    Notes = []
-    for key in keys:
-        Notes.append(backend.get(key))
-    return Notes
+    # Add custom span
+    tracer = get_tracer(__name__)
+    with tracer.start_as_current_span("get_notes_operation"):
+
+        keys = backend.keys()
+
+        Notes = []
+        for key in keys:
+            Notes.append(backend.get(key))
+        return Notes
 
 
 @app.get('/notes/{note_id}')
