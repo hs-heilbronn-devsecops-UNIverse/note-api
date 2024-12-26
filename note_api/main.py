@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import sys
+
 from uuid import uuid4
 from typing import List, Optional
 from os import getenv
@@ -18,17 +20,15 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 app = FastAPI()
 
-# Set up OpenTelemetry tracer
-tracer_provider = TracerProvider()
-trace.set_tracer_provider(tracer_provider)
+if "pytest" not in sys.modules:
+    # Set up OpenTelemetry tracer
+    tracer_provider = TracerProvider()
+    trace.set_tracer_provider(tracer_provider)
 
-# Configure GCP Trace exporter
-try:
+    # Configure GCP Trace exporter
     gcp_trace_exporter = GCPSpanExporter()
     span_processor = BatchSpanProcessor(gcp_trace_exporter)
     tracer_provider.add_span_processor(span_processor)
-except Exception as e:
-    print(f"Failed to configure GCPSpanExporter: {e}")
 
 # Verify the FastAPI app is instrumented to automatically trace all requests
 FastAPIInstrumentor.instrument_app(app)
