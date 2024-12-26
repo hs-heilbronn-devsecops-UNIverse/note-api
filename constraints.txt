@@ -1,3 +1,0 @@
-opentelemetry-api==0.17b0
-opentelemetry-sdk==0.17b0
-opentelemetry-exporter-google-cloud==0.18b1

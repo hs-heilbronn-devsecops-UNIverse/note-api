@@ -11,24 +11,20 @@ from .model import Note, CreateNoteRequest
 
 from opentelemetry import trace
 from opentelemetry.trace import get_tracer
-from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.instrumentation.asgi import OpenTelemetryMiddlewar
+from opentelemetry.exporter.gcp.trace import GCPSpanExporter
 
 app = FastAPI()
 
-# OpenTelemetry setup
+# Set up OpenTelemetry tracer
 tracer_provider = TracerProvider()
 trace.set_tracer_provider(tracer_provider)
 
-cloud_trace_exporter = CloudTraceSpanExporter()
-span_processor = BatchSpanProcessor(cloud_trace_exporter)
+# Configure GCP Trace exporter
+gcp_trace_exporter = GCPSpanExporter()
+span_processor = BatchSpanProcessor(gcp_trace_exporter)
 tracer_provider.add_span_processor(span_processor)
-
-FastAPIInstrumentor.instrument_app(app)
-app.add_middleware(OpenTelemetryMiddleware)
 
 my_backend: Optional[Backend] = None
 
