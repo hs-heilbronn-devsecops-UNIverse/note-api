@@ -32,8 +32,8 @@ if "pytest" not in sys.modules and os.getenv("ENV") != "test":
     span_processor = SimpleSpanProcessor(cloud_trace_exporter)
     tracer_provider.add_span_processor(span_processor)
 
-    # Logging Instrumentation
-    LoggingInstrumentor().instrument()
+    # Injects tracing context into log statements
+    LoggingInstrumentor().instrument(set_logging_format=True)
 
 # Verify the FastAPI app is instrumented to automatically trace all requests
 FastAPIInstrumentor.instrument_app(app)
@@ -66,8 +66,6 @@ def get_notes(backend: Annotated[Backend, Depends(get_backend)]) -> List[Note]:
     # Add custom span
     tracer = get_tracer(__name__)
     with tracer.start_as_current_span("get_notes_operation"):
-
-        logger.info("OpenTelemetry log example with trace_id: %s", tracer.get_current_span().get_span_context().trace_id)
 
         keys = backend.keys()
 
