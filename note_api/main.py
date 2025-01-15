@@ -21,15 +21,14 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 app = FastAPI()
 
-if "pytest" not in sys.modules and os.getenv("ENV") != "test":
-    # Set up OpenTelemetry tracer
-    tracer_provider = TracerProvider()
-    trace.set_tracer_provider(tracer_provider)
+# Set up OpenTelemetry tracer
+tracer_provider = TracerProvider()
+trace.set_tracer_provider(tracer_provider)
 
-    # Configure GCP Trace exporter
-    cloud_trace_exporter = CloudTraceSpanExporter()
-    span_processor = SimpleSpanProcessor(cloud_trace_exporter)
-    tracer_provider.add_span_processor(span_processor)
+# Configure GCP Trace exporter
+cloud_trace_exporter = CloudTraceSpanExporter()
+span_processor = SimpleSpanProcessor(cloud_trace_exporter)
+tracer_provider.add_span_processor(span_processor)
 
 # Verify the FastAPI app is instrumented to automatically trace all requests
 FastAPIInstrumentor.instrument_app(app)
